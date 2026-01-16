@@ -41,8 +41,8 @@ public class AdminDashboard {
 
         refreshBtn.setOnAction(e -> {
             try {
-                mentorsList.setItems(FXCollections.observableArrayList(svc.listMentors()));
-                studentsList.setItems(FXCollections.observableArrayList(svc.listStudents()));
+                mentorsList.setItems(FXCollections.observableArrayList(svc.getAllMentors()));
+                studentsList.setItems(FXCollections.observableArrayList(svc.getAllStudents()));
             } catch (Exception ex){ ex.printStackTrace(); }
         });
         createBtn.setOnAction(e -> {

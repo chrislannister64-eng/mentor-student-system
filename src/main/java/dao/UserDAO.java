@@ -1,81 +1,142 @@
 package dao;
+
 import model.User;
+import util.DBUtil;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UserDAO {
-    public User getByEmailAndPassword(String email,String password) throws SQLException {
-        String q = "SELECT * FROM Users WHERE email=? AND password=?";
-        try(Connection c= DBUtil.getConnection(); PreparedStatement ps=c.prepareStatement(q)){
-            ps.setString(1,email); ps.setString(2,password);
-            ResultSet rs = ps.executeQuery();
-            if(rs.next())
-                return map(rs);
-            return null;
-        }
-    }
 
-    public User getById(int id) throws SQLException {
-        String q="SELECT * FROM Users WHERE id=?";
-        try(Connection c=DBUtil.getConnection(); PreparedStatement ps=c.prepareStatement(q)){
-            ps.setInt(1,id); ResultSet rs=ps.executeQuery();
-            if(rs.next()) return map(rs);
+    //  LOGIN
+    public User login(String email, String password) throws SQLException {
+        String sql = "SELECT * FROM users WHERE email=? AND password=?";
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, email);
+            ps.setString(2, password);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return map(rs);
+            }
             return null;
         }
     }
 
     public List<User> getStudentsByMentor(int mentorId) throws SQLException {
-        String q="SELECT * FROM Users WHERE role='Student' AND assigned_mentor_id=?";
-        try(Connection c=DBUtil.getConnection(); PreparedStatement ps=c.prepareStatement(q)){
-            ps.setInt(1,mentorId);
-            ResultSet rs=ps.executeQuery();
-            List<User> out=new ArrayList<>();
-            while(rs.next()) out.add(map(rs));
-            return out;
+        List<User> list = new ArrayList<>();
+
+        String sql = """
+        SELECT u.*
+        FROM users u
+        JOIN mentor_students ms ON u.id = ms.student_id
+        WHERE ms.mentor_id = ?
+    """;
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, mentorId);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                list.add(map(rs));
+            }
         }
+        return list;
     }
 
-    public List<User> getAllMentors() throws SQLException {
-        String q="SELECT * FROM Users WHERE role='Mentor'";
-        try(Connection c=DBUtil.getConnection(); Statement s=c.createStatement()){
-            ResultSet rs=s.executeQuery(q); List<User> list=new ArrayList<>();
-            while(rs.next()) list.add(map(rs));
-            return list;
-        }
-    }
+    // CREATE USER
+    public void create(User user) throws SQLException {
+        String sql = "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)";
 
-    public List<User> getAllStudents() throws SQLException {
-        String q="SELECT * FROM Users WHERE role='Student'";
-        try(Connection c=DBUtil.getConnection(); Statement s=c.createStatement()){
-            ResultSet rs=s.executeQuery(q); List<User> list=new ArrayList<>();
-            while(rs.next()) list.add(map(rs));
-            return list;
-        }
-    }
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-    public void createUser(User u) throws SQLException {
-        String q="INSERT INTO Users (name,role,email,password,assigned_mentor_id) VALUES (?,?,?,?,?)";
-        try(Connection c=DBUtil.getConnection(); PreparedStatement ps=c.prepareStatement(q)){
-            ps.setString(1,u.getName()); ps.setString(2,u.getRole()); ps.setString(3,u.getEmail());
-            ps.setString(4,u.getPassword()); if(u.getAssignedMentorId()==null) ps.setNull(5,Types.INTEGER);
-            else ps.setInt(5,u.getAssignedMentorId());
+            ps.setString(1, user.getName());
+            ps.setString(2, user.getEmail());
+            ps.setString(3, user.getPassword());
+            ps.setString(4, user.getRole());
+
             ps.executeUpdate();
         }
     }
 
-    public void assignMentorToStudent(int studentId, Integer mentorId) throws SQLException {
-        String q="UPDATE Users SET assigned_mentor_id=? WHERE id=?";
-        try(Connection c=DBUtil.getConnection(); PreparedStatement ps=c.prepareStatement(q)){
-            if(mentorId==null) ps.setNull(1,Types.INTEGER); else ps.setInt(1,mentorId);
-            ps.setInt(2,studentId); ps.executeUpdate();
+    // GET USER BY ID
+    public User getById(int id) throws SQLException {
+        String sql = "SELECT * FROM users WHERE id=?";
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return map(rs);
+            }
+            return null;
         }
     }
 
-    private User map(ResultSet rs) throws SQLException {
-        return new User(rs.getInt("id"), rs.getString("name"), rs.getString("role"),
-                rs.getString("email"), rs.getString("password"),
-                (Integer) rs.getObject("assigned_mentor_id"));
+    // GET ALL USERS
+    public List<User> getAll() throws SQLException {
+        List<User> list = new ArrayList<>();
+        String sql = "SELECT * FROM users";
+
+        try (Connection conn = DBUtil.getConnection();
+             Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+
+            while (rs.next()) {
+                list.add(map(rs));
+            }
+        }
+        return list;
     }
+
+    //  GET ALL MENTORS
+    public List<User> getAllMentors() throws SQLException {
+        return getByRole("Mentor");
+    }
+
+    //  GET ALL STUDENTS
+    public List<User> getAllStudents() throws SQLException {
+        return getByRole("Student");
+    }
+
+    // 🔒 Helper method
+    private List<User> getByRole(String role) throws SQLException {
+        List<User> list = new ArrayList<>();
+        String sql = "SELECT * FROM users WHERE role=?";
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, role);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                list.add(map(rs));
+            }
+        }
+        return list;
+    }
+
+    // 🧠 MAP RESULTSET → USER
+    private User map(ResultSet rs) throws SQLException {
+        return new User(
+                rs.getInt("id"),
+                rs.getString("name"),
+                rs.getString("email"),
+                rs.getString("password"),
+                rs.getString("role")
+        );
+    }
+
+   
 }

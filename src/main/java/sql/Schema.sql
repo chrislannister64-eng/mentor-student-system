@@ -1,6 +1,6 @@
 -- 1️⃣ Create database
 CREATE DATABASE IF NOT EXISTS mentor_student_db;
-USE mentor_system;
+USE mentor_student_db;
 
 -- 2️⃣ Users table
 CREATE TABLE IF NOT EXISTS users (
@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS users (
 -- 3️⃣ Courses table
 CREATE TABLE IF NOT EXISTS courses (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL
+    name VARCHAR(100) NOT NULL,
+    description VARCHAR(255)
 );
 
 -- 4️⃣ Student-Course assignment table

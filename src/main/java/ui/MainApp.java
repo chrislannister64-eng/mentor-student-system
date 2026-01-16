@@ -7,8 +7,13 @@ import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import model.User;
 import service.SystemService;
+import util.DBInitializer;
 
 public class MainApp extends Application {
+    public static void main(String[] args) {
+        DBInitializer.initialize();  // ✅ This sets up your DB and tables
+        launch(args);
+    }
     private final SystemService svc = new SystemService();
 
     @Override
@@ -45,5 +50,5 @@ public class MainApp extends Application {
 
     private void showAlert(String t,String m){ Alert a=new Alert(Alert.AlertType.INFORMATION); a.setTitle(t); a.setContentText(m); a.showAndWait(); }
 
-    public static void main(String[] args){ launch(); }
+
 }

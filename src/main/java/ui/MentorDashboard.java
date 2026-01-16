@@ -78,7 +78,7 @@ public class MentorDashboard {
                 String fu = parts.length>1?parts[1]:"";
                 try {
                     int sid = Integer.parseInt(sessionIdField.getText().trim());
-                    svc.addNote(sid, sel.getId(), notes, fu);
+                    svc.addNote(sid, sel.getId(), notes);
                     showAlert("Saved","Note saved");
                 } catch (Exception ex){ ex.printStackTrace(); showAlert("Error", ex.getMessage()); }
             });

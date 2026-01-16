@@ -1,6 +1,6 @@
 package dao;
 import model.Attendance;
-
+import util.DBUtil;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
